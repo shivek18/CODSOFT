@@ -1,0 +1,59 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.stattools import adfuller
+
+# Load your sales data as a pandas DataFrame, assuming you have a date column and a sales column
+# Replace 'sales_data.csv' with the path to your data file
+data = pd.read_csv('advertising.csv')
+
+# Convert the date column to a datetime object and set it as the index
+data['Date'] = pd.to_datetime(data['Date'])
+data.set_index('Date', inplace=True)
+
+# Check if the data is stationary using the Augmented Dickey-Fuller test
+def test_stationarity(timeseries):
+    # Perform Dickey-Fuller test
+    result = adfuller(timeseries, autolag='AIC')
+    print('ADF Statistic:', result[0])
+    print('p-value:', result[1])
+    print('Critical Values:')
+    for key, value in result[4].items():
+        print(f'   {key}: {value}')
+
+test_stationarity(data['Sales'])
+
+# If the data is not stationary, you can difference it to make it stationary
+data_diff = data['Sales'].diff().dropna()
+
+# Plot the ACF and PACF to determine the order of ARIMA(p, d, q)
+plot_acf(data_diff, lags=20)
+plot_pacf(data_diff, lags=20)
+plt.show()
+
+# Based on the ACF and PACF plots, determine the values of p and q for ARIMA(p, d, q)
+p = 1  # AR order
+d = 1  # Differencing order
+q = 1  # MA order
+
+# Fit the ARIMA model
+model = ARIMA(data['Sales'], order=(p, d, q))
+results = model.fit(disp=-1)
+
+# Plot the original sales data and the predicted values
+plt.figure(figsize=(12, 6))
+plt.plot(data.index, data['Sales'], label='Actual Sales')
+plt.plot(data.index, results.fittedvalues, color='red', label='Predicted Sales')
+plt.legend()
+plt.title('Sales Prediction using ARIMA')
+plt.show()
+
+# Forecast future sales
+forecast_steps = 12  # Change this to the number of periods you want to forecast
+forecast, stderr, conf_int = results.forecast(steps=forecast_steps)
+
+# Print the forecasted sales values
+print('Forecasted Sales:')
+print(forecast)
