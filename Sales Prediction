@@ -1,17 +1,12 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
 
 # Load your sales data as a pandas DataFrame, assuming you have a date column and a sales column
-# Replace 'sales_data.csv' with the path to your data file
-data = pd.read_csv('advertising.csv')
-
-# Convert the date column to a datetime object and set it as the index
-data['Date'] = pd.to_datetime(data['Date'])
-data.set_index('Date', inplace=True)
+data = pd.read_csv("advertising.csv")
 
 # Check if the data is stationary using the Augmented Dickey-Fuller test
 def test_stationarity(timeseries):
@@ -40,7 +35,7 @@ q = 1  # MA order
 
 # Fit the ARIMA model
 model = ARIMA(data['Sales'], order=(p, d, q))
-results = model.fit(disp=-1)
+results = model.fit()
 
 # Plot the original sales data and the predicted values
 plt.figure(figsize=(12, 6))
@@ -52,7 +47,9 @@ plt.show()
 
 # Forecast future sales
 forecast_steps = 12  # Change this to the number of periods you want to forecast
-forecast, stderr, conf_int = results.forecast(steps=forecast_steps)
+forecast_obj = results.get_forecast(steps=forecast_steps)
+forecast = forecast_obj.predicted_mean
+conf_int = forecast_obj.conf_int()
 
 # Print the forecasted sales values
 print('Forecasted Sales:')
