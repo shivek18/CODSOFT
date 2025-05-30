@@ -1,14 +1,21 @@
+import seaborn as sns
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
 # Load the credit card fraud dataset (replace with your dataset)
-data = pd.read_csv('creditcard.csv')
+data = pd.read_csv("creditcard.csv")
 
 # Explore the dataset
 print(data.head())
+
+# Plot fraud percentage
+fraud_counts = data['Class'].value_counts()
+fraud_labels = ['Non-Fraud (0)', 'Fraud (1)']
+fraud_percentages = fraud_counts / fraud_counts.sum() * 100
 
 # Prepare data
 X = data.drop('Class', axis=1)
@@ -34,3 +41,34 @@ print("Confusion Matrix:")
 print(conf_matrix)
 print("Classification Report:")
 print(class_report)
+
+RFC_METRIC = 'gini'  #metric used for RandomForrestClassifier
+NUM_ESTIMATORS = 100 #number of estimators used for RandomForrestClassifier
+NO_JOBS = 4 #number of parallel jobs used for RandomForrestClassifier
+RANDOM_STATE = 2018
+
+#TRAIN/VALIDATION/TEST SPLIT
+#VALIDATION
+VALID_SIZE = 0.20 # simple validation using train_test_split
+TEST_SIZE = 0.20 # test size using_train_test_split
+
+target = 'Class'
+predictors = ['Time', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10',\
+       'V11', 'V12', 'V13', 'V14', 'V15', 'V16', 'V17', 'V18', 'V19',\
+       'V20', 'V21', 'V22', 'V23', 'V24', 'V25', 'V26', 'V27', 'V28',\
+       'Amount']
+
+train_df, test_df = train_test_split(data, test_size=TEST_SIZE, random_state=RANDOM_STATE, shuffle=True )
+train_df, valid_df = train_test_split(train_df, test_size=VALID_SIZE, random_state=RANDOM_STATE, shuffle=True )
+
+clf = RandomForestClassifier(n_jobs=NO_JOBS, random_state=RANDOM_STATE, criterion=RFC_METRIC, n_estimators=NUM_ESTIMATORS, verbose=False)
+clf.fit(train_df[predictors], train_df[target].values)
+preds = clf.predict(valid_df[predictors])
+
+tmp = pd.DataFrame({'Feature': predictors, 'Feature importance': clf.feature_importances_})
+tmp = tmp.sort_values(by='Feature importance',ascending=False)
+plt.figure(figsize = (7,4))
+plt.title('Features importance',fontsize=14)
+s = sns.barplot(x='Feature',y='Feature importance',data=tmp)
+s.set_xticklabels(s.get_xticklabels(),rotation=90)
+plt.show() 
